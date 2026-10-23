@@ -1,0 +1,58 @@
+name: Compiler SITADELO HISSABI APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Installer les dependances systeme
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev libltdl-dev
+
+      - name: Installer Buildozer
+        run: |
+          python -m pip install --upgrade pip setuptools
+          python -m pip install buildozer Cython==0.29.33
+
+      - name: Verifier les fichiers
+        run: |
+          test -f main.py
+          test -f buildozer.spec
+
+      - name: Compiler APK debug
+        run: buildozer -v android debug
+
+      - name: Publier APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SITADELO-HISSABI-APK
+          path: bin/*.apk
+          if-no-files-found: error
+          retention-days: 7
